@@ -27,7 +27,7 @@ To get started with Falcon AI, follow these steps:
     ```shell
     pip install -r requirements.txt
     ```
-3.  **Dataset**: Prepare the dataset required for the specific project you want to explore. Instructions on obtaining or generating the dataset can usually be found within each project's directory.
+3.  **Dataset**: Prepare the dataset required for the specific project you want to explore. Instructions on obtaining or generating the dataset can usually be found within each project's directory. [Here its a csv having having few coulmns]
 
 4.  **Model Training**: Train the generative AI model using Qlora techniques. Refer to the project's README.md file for detailed instructions on how to train the model.
 
