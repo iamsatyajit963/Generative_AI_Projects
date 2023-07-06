@@ -4,9 +4,11 @@ Falcon AI is a project focused on training generative AI models using Qlora tech
 
 ## Table of Contents
 - [Installation](#installation)
-- [Dataset](#Dataset)
-- [Model Training](#Model_Training)
-- [Model Evaluation](#Model_Evaluation)
+- [Dataset](#dataset)
+- [Model Training](#model_training)
+- [Model Evaluation](#model_evaluation)
+- [Usage](#usage)
+- [Contributions](#contributions)
 - [License](#license)
 
 ## Introduction
@@ -38,7 +40,7 @@ Each project within the Falcon AI repository has its own directory, containing t
 
 You can also explore the various projects available in the repository by browsing through the project directories and selecting the one that interests you the most. Feel free to experiment, modify, and enhance the existing projects to suit your needs.
 
-## Contributing
+## Contributions
 Contributions to Falcon AI are welcome! If you would like to contribute to the project, please follow these steps:
 
 1.  Fork the repository.
