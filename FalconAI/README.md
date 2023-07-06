@@ -3,10 +3,8 @@
 Falcon AI is a project focused on training generative AI models using Qlora techniques. It aims to provide a collection of small to medium projects related to generative AI, along with instructions on how to use open source models.
 
 ## Table of Contents
-- [Installation](#installation)
-- [Dataset](#dataset)
-- [Model Training](#model_training)
-- [Model Evaluation](#model_evaluation)
+- [Introduction](#introduction)
+- [Getting Started](#getting_started)
 - [Usage](#usage)
 - [Contributions](#contributions)
 - [License](#license)
