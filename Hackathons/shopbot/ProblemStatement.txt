@@ -1,0 +1,14 @@
+Problem Statement # 1
+Idea Name	SuperValu Recipe/Shopbot
+
+Problem Statement	 SuperValu Online has a solid infrastructure but with customer experience being the key factor for online growth against our competitors, having an online shopping assistant could be a real differentiator. The concept is to provide users of SuperValu Online with an AI powered virtual assistant to assist them in their shopping. The virtual assistant will not be a glorified search engine - it will be an AI assistant that knows the customer and supports their lifestyle.
+
+What is required	Client Expectation on Outcome in Hackathon
+The shopbot should allow:
+ 
+•	Customers can interface with the shopbot in natural language and have a friendly efficient experience.
+•	Customers to enter their meal plan for the week and have a shopping cart populated with all of the items they will require.
+•	Customers can take a photo of the products they already have (e.g. in their fridge) and have a meal plan created for them for the week given their circumstances (e.g. family of 5)
+•	Customers can choose their shopping preferences across a range of dimensions such as cost (low/med/high), conditions (lactose intolerant, coeliac etc.), goals (weight loss) and the shop bot should take this information into consideration when developing the meal plan.
+•	Customers will be advised how soon delivery can take place (e.g. Monday afternoon, need to make dinner, food can be delivered in next couple of hours).
+
