@@ -92,4 +92,11 @@ def get_all_information(file_name:str, model="gpt-4o-mini"):
             | llm.with_structured_output(ExtractInformation)
         )
     
-    return info_rag_chain.invoke("Extract the details for all SLA document(s) mentioned in the context, including their SLA Name which may be the title of the document, Parties Involved, System Concerned, Descriptions (what is the sla document is about), Associated Metrics, Page number.")
+    return info_rag_chain.invoke("""Extract the following details from all SLA (Service Level Agreement) documents mentioned in the provided text. For each SLA document:
+	1.	SLA Name: The title of the SLA document or the name identifying it.
+	2.	Parties Involved: All entities (e.g., companies, departments, teams, individuals) bound by the agreement.
+	3.	System Concerned: The system(s), service(s), or technology the SLA pertains to.
+	4.	Description: A concise explanation of what the SLA document covers (e.g., its purpose, objectives, or scope).
+	5.	Associated Metrics: Performance or service metrics explicitly stated in the SLA (e.g., uptime, response times, throughput).
+	6.	Page Number: If applicable, the page number or section where the SLA details are found.
+Ensure the extracted information is presented clearly and organized by each SLA document. If details are not explicitly stated, annotate them as “Not Mentioned.""")
