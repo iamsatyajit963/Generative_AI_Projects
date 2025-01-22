@@ -1,4 +1,5 @@
 from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
@@ -38,7 +39,10 @@ qa_prompt = ChatPromptTemplate.from_messages([
 ])
 
 def get_rag_chain(model="gpt-4o-mini"):
-    llm = ChatOpenAI(model=model)
+    if model == "gpt-4o-mini" or model == "gpt-4o":
+        llm = ChatOpenAI(model=model)
+    else:
+        llm = ChatOllama(model=model)
     history_aware_retriever = create_history_aware_retriever(llm, retriever, contextualize_q_prompt)
     question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
     rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)    
@@ -70,7 +74,10 @@ Answer the question based on the above context: {question}
 """
 
 def get_all_information(file_name:str, model="gpt-4o-mini"):
-    llm = ChatOpenAI(model=model)
+    if model == "gpt-4o-mini" or model == "gpt-4o":
+        llm = ChatOpenAI(model=model)
+    else:
+        llm = ChatOllama(model=model)
     vs_retriever = vectorstore.as_retriever(search_type = "similarity")    
     formatted_context = vs_retriever.get_relevant_documents(file_name)
     # print("*"*30)

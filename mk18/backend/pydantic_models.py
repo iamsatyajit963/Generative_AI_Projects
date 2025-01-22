@@ -6,6 +6,10 @@ from typing import List, Optional
 class ModelName(str, Enum):
     GPT4_O = "gpt-4o"
     GPT4_O_MINI = "gpt-4o-mini"
+    Llamma = "llama3.2"
+    Phi = "phi3"
+    Mistral = "mistral"
+    Gemma_2B = "gemma2:2b"
 
 class QueryInput(BaseModel):
     question: str
