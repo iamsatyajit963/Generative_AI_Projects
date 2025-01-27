@@ -1,70 +1,118 @@
-# Generative AI Projects
+# SLA Insights
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/your-username/your-repo-name/blob/main/LICENSE)
+## Solution Architecture
 
-A collection of personal projects utilizing generative artificial intelligence techniques to create unique and creative outputs.
+![IMAGE](https://github.com/Infosys-STG-Makeathon-KalingaWarriors/make-a-thon-18/blob/main/image.png)
 
-## Table of Contents
+## Available Scripts for the Frontend
 
-- [Introduction](#introduction)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Project Descriptions](#project-descriptions)
-- [Contributing](#contributing)
-- [License](#license)
+In the project directory, you can run:
 
-## Introduction
+### Step 1. Install the dependencies
+npm install
 
-Welcome to the Generative AI Projects repository! This collection of projects showcases the power and creativity of generative artificial intelligence algorithms. Generative AI allows us to create novel and unique outputs, ranging from art and music to text and images, by training models on existing data and then generating new content based on that training.
+### Step 2. Running the Application
+#### npm run dev
+Runs the app in the development mode. Open http://localhost:5173 to view it in the browser.
 
-This repository serves as a platform to share my personal experiments and projects in the field of generative AI. Each project has its own directory, containing the necessary code, data, and documentation to reproduce and explore the outputs. Feel free to browse through the projects, try them out, and use them as a starting point for your own experiments.
+#### npm run build
+Builds the app for production to the dist folder.
 
-## Installation
-
-To run the projects in this repository, you will need to have the following prerequisites installed:
-
-- Python 3.x
-- [List any additional dependencies specific to your projects]
-
-To install the necessary dependencies, you can use the following command:
-
-```shell
-pip install -r requirements.txt
+### Frontend Project Structure
+```bash
+.
+├── .gitignore
+├── eslint.config.js
+├── index.html
+├── package.json
+├── postcss.config.js
+├── src
+│   ├── App.tsx
+│   ├── components
+│   │   ├── Chat
+│   │   │   ├── Chatbot.tsx
+│   │   │   ├── ChatInput.tsx
+│   │   │   └── ChatMessage.tsx
+│   │   ├── Dashboard.tsx
+│   │   ├── DocumentList.tsx
+│   │   ├── DocumentViewer.tsx
+│   │   ├── FileUpload.tsx
+│   │   ├── LoginForm.tsx
+│   │   └── ProcessingStatus.tsx
+│   ├── contexts
+│   │   ├── AuthContext.tsx
+│   │   ├── ChatbotContext.tsx
+│   │   └── FileContext.tsx
+│   ├── hooks
+│   │   └── useClickOutside.ts
+│   ├── index.css
+│   ├── main.tsx
+│   └── vite-env.d.ts
+├── tailwind.config.js
+├── tsconfig.app.json
+├── tsconfig.json
+├── tsconfig.node.json
+└── vite.config.ts
 ```
 
-## Usage
+# Open Souce model setup in Backend
 
-Each project in this repository has its own directory with a dedicated README file explaining how to use and run that specific project. Please refer to the project-specific documentation for detailed instructions.
+<div align="center">
+  <a href="https://ollama.com" />
+    <img alt="ollama" height="200px" src="https://github.com/ollama/ollama/assets/3325447/0d0b44e2-8f4a-4e99-9b52-a5c1c741c8f7">
+  </a>
+</div>
 
-To get started, follow these general steps:
-1.  Clone this repository to your local machine:
-      ```shell
-      git clone https://github.com/your-username/genai.git
-      ```
-2.  Change to the project directory:
-      ```shell
-      cd your-project-directory
-      ```
-3.  Follow the instructions provided in the project's README to set up any additional requirements or dependencies.
-4.  Run the project according to the instructions, and enjoy the generative AI output!
+# Ollama
 
-## Project Descriptions
+Get up and running with large language models.
 
-This repository currently includes the following generative AI projects:
+### macOS
 
+[Download](https://ollama.com/download/Ollama-darwin.zip)
 
-Feel free to explore each project's directory for more details on what they do and how they can be used.
+### Windows
 
-## Contributing
-Contributions to this repository are welcome! If you have any ideas for improvements, new projects, or bug fixes, please submit an issue or a pull request. Let's build and explore generative AI together!
+[Download](https://ollama.com/download/OllamaSetup.exe)
 
-Please review the Contributing Guidelines for more information.
+### Linux
 
-## License
-This repository is licensed under the MIT License. Feel free to modify, distribute, and use the code and the generated outputs for personal and commercial purposes. However, please be aware of any licenses or restrictions associated with the data used in each project, as they may vary.
+```
+curl -fsSL https://ollama.com/install.sh | sh
+```
 
-If you use or refer to this repository, it would be greatly appreciated if you could provide attribution by linking back to this repository.
+## Quickstart
 
-Thank you for visiting the Generative AI Projects repository! I hope you find the projects here inspiring and useful. If you have any questions or feedback, please don't hesitate to reach out.
+To run and chat with [Llama 3.2](https://ollama.com/library/llama3.2):
 
-### Happy generative AI exploration!
+```
+ollama run llama3.2
+```
+
+## Model library
+
+Ollama supports a list of models available on [ollama.com/library](https://ollama.com/library 'ollama model library')
+
+Here are some example models that can be downloaded:
+
+| Model              | Parameters | Size  | Download                         |
+| ------------------ | ---------- | ----- | -------------------------------- |
+| Llama 3.2          | 3B         | 2.0GB | `ollama run llama3.2`            |
+| Phi 3 Mini         | 3.8B       | 2.3GB | `ollama run phi3`                |
+| Gemma 2            | 2B         | 1.6GB | `ollama run gemma2:2b`           |
+| Mistral            | 7B         | 4.1GB | `ollama run mistral`             |
+
+> [!NOTE]
+> You should have at least 8 GB of RAM available to run the 7B models, 16 GB to run the 13B models, and 32 GB to run the 33B models.
+
+## Backend Project Structure
+
+```Bash
+.
+├──__init__.py
+├──chroma_utils.py
+├──db_utils.py
+├──langchain_utils.py
+├──main.py
+└──pydantic_models.py
+```
