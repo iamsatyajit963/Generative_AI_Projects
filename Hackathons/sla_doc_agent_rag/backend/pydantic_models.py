@@ -6,6 +6,10 @@ from typing import List, Optional
 class ModelName(str, Enum):
     GPT4_O = "gpt-4o"
     GPT4_O_MINI = "gpt-4o-mini"
+    Llamma = "llama3.2"
+    Phi = "phi3"
+    Mistral = "mistral"
+    Gemma_2B = "gemma2:2b"
 
 class QueryInput(BaseModel):
     question: str
@@ -33,6 +37,7 @@ class DeleteFileRequest(BaseModel):
 
 class ExtractFileRequest(BaseModel):
     file_name: str
+    model: str
 
 class DocInfo(BaseModel):
     sla_name: str = Field(..., example="AWS Managed Services Service Level Agreement")
@@ -40,7 +45,7 @@ class DocInfo(BaseModel):
     system_concerned: str = Field(..., example="AWS Managed Services (AMS)")
     description: str = Field(..., example="This SLA governs the use of AWS Managed Services, including AMS Advanced and AMS Accelerate. It outlines service commitments and credit eligibility for service level failures.")
     associated_metrics: List[str] = Field(..., example=["Incident Response Time", "Incident Restoration/Resolution Time","AWS Console/API Availability","Patch Management","Environment Recovery Initiation Time"])
-    page_bumber: Optional[int] = Field(None, example= 200)
+    page_number: Optional[int] = Field(None, example= 200)
 
 class ExtractInformation(BaseModel):
     docs_info: List[DocInfo] = Field(

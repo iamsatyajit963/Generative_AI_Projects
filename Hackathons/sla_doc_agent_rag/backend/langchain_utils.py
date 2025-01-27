@@ -1,4 +1,7 @@
+import json
+
 from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
@@ -9,7 +12,8 @@ import os
 from chroma_utils import vectorstore
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 from pydantic_models import ExtractInformation
-
+from langchain_ollama import OllamaEmbeddings, OllamaLLM
+import re
 
 retriever = vectorstore.as_retriever(search_kwargs={"k": 2})
 
@@ -38,7 +42,11 @@ qa_prompt = ChatPromptTemplate.from_messages([
 ])
 
 def get_rag_chain(model="gpt-4o-mini"):
-    llm = ChatOpenAI(model=model)
+    if model == "gpt-4o-mini" or model == "gpt-4o":
+        llm = ChatOpenAI(model=model)
+    else:
+        llm = ChatOllama(model=model)
+
     history_aware_retriever = create_history_aware_retriever(llm, retriever, contextualize_q_prompt)
     question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
     rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)    
@@ -70,33 +78,46 @@ Answer the question based on the above context: {question}
 """
 
 def get_all_information(file_name:str, model="gpt-4o-mini"):
-    llm = ChatOpenAI(model=model)
+    if model == "gpt-4o-mini" or model == "gpt-4o":
+        llm = ChatOpenAI(model=model)
+    else:
+        llm = ChatOllama(model=model)
     vs_retriever = vectorstore.as_retriever(search_type = "similarity")    
     formatted_context = vs_retriever.get_relevant_documents(file_name)
-    # print("*"*30)
-    # print(formatted_context)
-    # print("*"*30)
+
     formatted_context = format_docs(formatted_context)
-    # print("#"*30)
-    # print(formatted_context)
-    # print("#"*30)
 
-    prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
-
-    info_rag_chain = (
-            {   
-                "context": RunnableLambda(lambda _: formatted_context),
-                "question": RunnablePassthrough()
-            }
-            | prompt_template
-            | llm.with_structured_output(ExtractInformation)
+    prompt ="""Extract the following details from all SLA (Service Level Agreement) documents mentioned in the provided text. For each SLA document:
+    	1.	sla_name: The title of the SLA document or the name identifying it.
+    	2.	parties_involved: All entities (e.g., companies, departments, teams, individuals) bound by the agreement.
+    	3.	parties_involved: The system(s), service(s), or technology the SLA pertains to.
+    	4.	description: A concise explanation of what the SLA document covers (e.g., its purpose, objectives, or scope).
+    	5.	associated_metrics: Performance or service metrics explicitly stated in the SLA (e.g., uptime, response times, throughput).
+    	6.	page_number: If applicable, the page number or section where the SLA details are found. Ensure the extracted information is presented clearly and organized by each SLA document.
+      7. Return the result in json format.
+        """
+    if model == "gpt-4o-mini" or model == "gpt-4o":
+        prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
+        info_rag_chain = (
+                {
+                    "context": RunnableLambda(lambda _: formatted_context),
+                    "question": RunnablePassthrough()
+                }
+                | prompt_template
+                | llm.with_structured_output(ExtractInformation)
         )
+        return info_rag_chain.invoke(prompt)
+    else:
+        ollamaMessage = [("system", prompt), ("human", formatted_context)]
+        ans = llm.invoke(ollamaMessage)
+        pattern = r'```(.*?)```'
+        matches = re.findall(pattern,ans.content,re.DOTALL)
+
+
+    testStr = matches[0].replace("json", "")
+    testStr = testStr.replace("Not Mentioned", '"'+'"')
+
+    final_result = {"docs_info" : json.loads(testStr)}
+    return final_result
     
-    return info_rag_chain.invoke("""Extract the following details from all SLA (Service Level Agreement) documents mentioned in the provided text. For each SLA document:
-	1.	SLA Name: The title of the SLA document or the name identifying it.
-	2.	Parties Involved: All entities (e.g., companies, departments, teams, individuals) bound by the agreement.
-	3.	System Concerned: The system(s), service(s), or technology the SLA pertains to.
-	4.	Description: A concise explanation of what the SLA document covers (e.g., its purpose, objectives, or scope).
-	5.	Associated Metrics: Performance or service metrics explicitly stated in the SLA (e.g., uptime, response times, throughput).
-	6.	Page Number: If applicable, the page number or section where the SLA details are found.
-Ensure the extracted information is presented clearly and organized by each SLA document. If details are not explicitly stated, annotate them as “Not Mentioned.""")
+

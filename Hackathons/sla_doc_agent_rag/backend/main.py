@@ -1,13 +1,25 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
-from pydantic_models import QueryInput, QueryResponse, DocumentInfo, DeleteFileRequest, ExtractInformation, ExtractFileRequest
+from fastapi.middleware.cors import CORSMiddleware
+
+from pydantic_models import QueryInput, QueryResponse, DocumentInfo, DeleteFileRequest, SourceInfo, ExtractFileRequest, ExtractInformation
 from langchain_utils import get_rag_chain, get_all_information
-from db_utils import insert_application_logs, get_chat_history, get_all_documents, insert_document_record, delete_document_record
+from db_utils import insert_application_logs, get_chat_history, get_all_documents, insert_document_record, delete_document_record, check_file_exists
 from chroma_utils import index_document_to_chroma, delete_doc_from_chroma
 import os
 import uuid
 import logging
 logging.basicConfig(filename='app.log', level=logging.INFO)
 app = FastAPI()
+
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/chat", response_model=QueryResponse)
 def chat(query_input: QueryInput):
@@ -59,8 +71,11 @@ def upload_and_index_document(file: UploadFile = File(...)):
     if file_extension not in allowed_extensions:
         raise HTTPException(status_code=400, detail=f"Unsupported file type. Allowed types are: {', '.join(allowed_extensions)}")
     
-    temp_file_path = f"temp_{file.filename}"
-    print(temp_file_path)
+    if check_file_exists(file.filename):
+        raise HTTPException(status_code=409, detail=f"A file with the name {file.filename} already exists.")
+    
+    temp_file_path = f"{file.filename}"
+    
     try:
         # Save the uploaded file to a temporary file
         with open(temp_file_path, "wb") as buffer:
@@ -97,9 +112,9 @@ def delete_document(request: DeleteFileRequest):
     else:
         return {"error": f"Failed to delete document with file_id {request.file_id} from Chroma."}
 
-
 @app.post("/extract-info")
 def extract_information(request : ExtractFileRequest):
-    structured_data = get_all_information(request.file_name)
+    print("Request came for ", request.model)
+    structured_data = get_all_information(request.file_name, request.model)
     print(structured_data)
-    return structured_data.dict()
+    return structured_data
