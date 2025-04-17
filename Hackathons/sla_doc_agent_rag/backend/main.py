@@ -1,13 +1,18 @@
+import json
+
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from pydantic_models import QueryInput, QueryResponse, DocumentInfo, DeleteFileRequest, SourceInfo, ExtractFileRequest, ExtractInformation
+from pydantic_models import QueryInput, QueryResponse, DocumentInfo, DeleteFileRequest, SourceInfo, ExtractFileRequest, \
+    ExtractInformation
 from langchain_utils import get_rag_chain, get_all_information
-from db_utils import insert_application_logs, get_chat_history, get_all_documents, insert_document_record, delete_document_record, check_file_exists
+from db_utils import insert_application_logs, get_chat_history, get_all_documents, insert_document_record, \
+    delete_document_record, check_file_exists, update_document_record, get_file_summary
 from chroma_utils import index_document_to_chroma, delete_doc_from_chroma
 import os
 import uuid
 import logging
+
 logging.basicConfig(filename='app.log', level=logging.INFO)
 app = FastAPI()
 
@@ -21,17 +26,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.post("/chat", response_model=QueryResponse)
 def chat(query_input: QueryInput):
+    print(query_input)
     session_id = query_input.session_id
     logging.info(f"Session ID: {session_id}, User Query: {query_input.question}, Model: {query_input.model.value}")
     if not session_id:
         session_id = str(uuid.uuid4())
 
-
     chat_history = get_chat_history(session_id)
     logging.info(f"Chat History: {chat_history}")
-    rag_chain = get_rag_chain(query_input.model.value)
+    rag_chain = get_rag_chain(query_input.model.value, query_input.fileNames)
     logging.info(f"rag_chain {rag_chain}")
     result = rag_chain.invoke({
         "input": query_input.question,
@@ -39,7 +45,7 @@ def chat(query_input: QueryInput):
     })
     answer = result["answer"]
     print(f"Keys in result: {result.keys()}")
-    sources = result['context']
+
     # Extract metadata from the context field
     sources = []
     if 'context' in result:
@@ -53,11 +59,15 @@ def chat(query_input: QueryInput):
             }
             sources.append(source_info)
     print(sources)
+    if len(sources) == 0:
+        answer = f"filenames={query_input.fileNames} doesn't contains relevent data for the question please try with " \
+                 f"some different questionns"
     # Log the extracted sources
     logging.info(f"Extracted Sources: {sources}")
     insert_application_logs(session_id, query_input.question, answer, query_input.model.value)
     logging.info(f"Session ID: {session_id}, AI Response: {answer}, Source: {sources}")
-    return QueryResponse(answer=answer, session_id=session_id, model=query_input.model, sources= sources)
+    return QueryResponse(answer=answer, session_id=session_id, model=query_input.model, sources=sources)
+
 
 from fastapi import UploadFile, File, HTTPException
 import os
@@ -67,23 +77,23 @@ import shutil
 def upload_and_index_document(file: UploadFile = File(...)):
     allowed_extensions = ['.pdf', '.docx', '.html']
     file_extension = os.path.splitext(file.filename)[1].lower()
-    
+
     if file_extension not in allowed_extensions:
-        raise HTTPException(status_code=400, detail=f"Unsupported file type. Allowed types are: {', '.join(allowed_extensions)}")
-    
+        raise HTTPException(status_code=400,
+                            detail=f"Unsupported file type. Allowed types are: {', '.join(allowed_extensions)}")
+
     if check_file_exists(file.filename):
         raise HTTPException(status_code=409, detail=f"A file with the name {file.filename} already exists.")
-    
+
     temp_file_path = f"{file.filename}"
-    
+
     try:
         # Save the uploaded file to a temporary file
         with open(temp_file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        
+
         file_id = insert_document_record(file.filename)
         success = index_document_to_chroma(temp_file_path, file_id)
-        
         if success:
             return {"message": f"File {file.filename} has been successfully uploaded and indexed.", "file_id": file_id}
         else:
@@ -93,9 +103,11 @@ def upload_and_index_document(file: UploadFile = File(...)):
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
 
+
 @app.get("/list-docs", response_model=list[DocumentInfo])
 def list_documents():
     return get_all_documents()
+
 
 @app.post("/delete-doc")
 def delete_document(request: DeleteFileRequest):
@@ -108,13 +120,34 @@ def delete_document(request: DeleteFileRequest):
         if db_delete_success:
             return {"message": f"Successfully deleted document with file_id {request.file_id} from the system."}
         else:
-            return {"error": f"Deleted from Chroma but failed to delete document with file_id {request.file_id} from the database."}
+            return {
+                "error": f"Deleted from Chroma but failed to delete document with file_id {request.file_id} from the database."}
     else:
         return {"error": f"Failed to delete document with file_id {request.file_id} from Chroma."}
 
+
 @app.post("/extract-info")
-def extract_information(request : ExtractFileRequest):
-    print("Request came for ", request.model)
-    structured_data = get_all_information(request.file_name, request.model)
-    print(structured_data)
-    return structured_data
+def extract_information(request: ExtractFileRequest):
+    summary_string = get_file_summary(request.file_name)
+    if(summary_string == None or checkEmptySummary(summary_string)):
+        print("Summary not found in database, retrieving summary from llm. Selected model is ", request.model)
+        summary_pydantic_model = get_all_information(request.file_name, request.model)
+        string_summary = summary_pydantic_model.model_dump_json()
+        print("-" * 50)
+        print(string_summary)
+        print("-" * 50)
+        update_document_record(string_summary, request.file_name)
+        return summary_pydantic_model
+    else:
+        print("Summary for file ", request.file_name, "is ----> \n", summary_string)
+        summary_json = json.loads(summary_string)
+        return summary_json
+
+
+def checkEmptySummary(summary_string):
+    summary_json = json.loads(summary_string)
+    summary_value = summary_json["docs_info"]
+    if(isinstance(summary_value, list) and not summary_value):
+        return True
+    else:
+        return False

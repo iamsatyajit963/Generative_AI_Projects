@@ -44,6 +44,7 @@ def create_document_store():
     conn.execute('''CREATE TABLE IF NOT EXISTS document_store
                     (id INTEGER PRIMARY KEY AUTOINCREMENT,
                      filename TEXT,
+                     summary TEXT,
                      upload_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
     conn.close()
 
@@ -55,6 +56,14 @@ def insert_document_record(filename):
     conn.commit()
     conn.close()
     return file_id
+
+def update_document_record(summary, filename):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE document_store SET summary = ? WHERE filename = ?', (summary,filename))
+    conn.commit()
+    conn.close()
+    return filename
 
 def check_file_exists(file_name: str) -> bool:
     conn = get_db_connection()
@@ -78,6 +87,18 @@ def get_all_documents():
     documents = cursor.fetchall()
     conn.close()
     return [dict(doc) for doc in documents]
+
+def get_file_summary(file_name):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT summary FROM document_store WHERE filename = ?', (file_name,))
+    row = cursor.fetchone()
+    conn.close()
+    if row:
+        return row[0]
+    else:
+        print("Record not found.")
+        return {"docs_info":[]}
 
 # Initialize the database tables
 create_application_logs()

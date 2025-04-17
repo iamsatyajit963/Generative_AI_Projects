@@ -12,10 +12,14 @@ import os
 from chroma_utils import vectorstore
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 from pydantic_models import ExtractInformation
+from db_utils import get_all_documents
 from langchain_ollama import OllamaEmbeddings, OllamaLLM
 import re
 
-retriever = vectorstore.as_retriever(search_kwargs={"k": 2})
+# retriever = vectorstore.as_retriever(search_kwargs={"k": 10}) search_type="mmr"
+# retriever = vectorstore.as_retriever(search_type="mmr",search_kwargs={"k": 10, "lambda_mult":0.85})
+# retriever = vectorstore.as_retriever(search_type="mmr",search_kwargs={'score_threshold': 0.8})
+
 
 output_parser = StrOutputParser()
 
@@ -35,21 +39,31 @@ contextualize_q_prompt = ChatPromptTemplate.from_messages([
 ])
 
 qa_prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are a helpful AI assistant. Use the following context to answer the user's question or tell about the same that you have found from the document(s)."),
+    ("system",
+     "You are a helpful AI assistant. Use the following context to answer the user's question or tell about the same that you have found from the document(s)."),
     ("system", "Context: {context}"),
     MessagesPlaceholder(variable_name="chat_history"),
     ("human", "{input}")
 ])
 
-def get_rag_chain(model="gpt-4o-mini"):
+
+def get_rag_chain(model="gpt-4o-mini", file_name=[]):
     if model == "gpt-4o-mini" or model == "gpt-4o":
-        llm = ChatOpenAI(model=model)
+        llm = ChatOpenAI(model=model, temperature=0.2)
     else:
         llm = ChatOllama(model=model)
 
+    filter_condition = {"source": {"$in": file_name}}
+    retriever = (
+            RunnableLambda(
+                lambda data: vectorstore.similarity_search_with_relevance_scores(query=data, k=20, score_threshold=0.5,
+                                                                                 filter=filter_condition))
+            | RunnableLambda(lambda data: [x[0] for x in data if x[1] > 0.65])
+    )
+
     history_aware_retriever = create_history_aware_retriever(llm, retriever, contextualize_q_prompt)
     question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
-    rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)    
+    rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
     return rag_chain
 
 
@@ -62,6 +76,7 @@ def format_docs(docs):
     :return: A string containing the text of all the documents joined by two newlines
     """
     return "\n\n".join(doc.page_content for doc in docs)
+
 
 # Prompt template
 PROMPT_TEMPLATE = """
@@ -77,24 +92,26 @@ don't know. DON'T MAKE UP ANYTHING.
 Answer the question based on the above context: {question}
 """
 
-def get_all_information(file_name:str, model="gpt-4o-mini"):
+
+def get_all_information(file_name: str, model="gpt-4o-mini"):
     if model == "gpt-4o-mini" or model == "gpt-4o":
         llm = ChatOpenAI(model=model)
     else:
         llm = ChatOllama(model=model)
-    vs_retriever = vectorstore.as_retriever(search_type = "similarity")    
-    formatted_context = vs_retriever.get_relevant_documents(file_name)
 
+    filter_condition = {"source": {"$in": [file_name]}}
+    vs_retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"filter": filter_condition})
+    formatted_context = vs_retriever.get_relevant_documents(file_name)
     formatted_context = format_docs(formatted_context)
 
-    prompt ="""Extract the following details from all SLA (Service Level Agreement) documents mentioned in the provided text. For each SLA document:
+    prompt = """Extract the following details from all SLA (Service Level Agreement) documents mentioned in the provided text. For each SLA document:
     	1.	sla_name: The title of the SLA document or the name identifying it.
     	2.	parties_involved: All entities (e.g., companies, departments, teams, individuals) bound by the agreement.
-    	3.	parties_involved: The system(s), service(s), or technology the SLA pertains to.
+    	3.	system_concerned: The system(s), service(s), or technology the SLA pertains to.
     	4.	description: A concise explanation of what the SLA document covers (e.g., its purpose, objectives, or scope).
     	5.	associated_metrics: Performance or service metrics explicitly stated in the SLA (e.g., uptime, response times, throughput).
     	6.	page_number: If applicable, the page number or section where the SLA details are found. Ensure the extracted information is presented clearly and organized by each SLA document.
-      7. Return the result in json format.
+        7.  Return the result in json format.
         """
     if model == "gpt-4o-mini" or model == "gpt-4o":
         prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
@@ -111,13 +128,12 @@ def get_all_information(file_name:str, model="gpt-4o-mini"):
         ollamaMessage = [("system", prompt), ("human", formatted_context)]
         ans = llm.invoke(ollamaMessage)
         pattern = r'```(.*?)```'
-        matches = re.findall(pattern,ans.content,re.DOTALL)
-
+        matches = re.findall(pattern, ans.content, re.DOTALL)
 
     testStr = matches[0].replace("json", "")
-    testStr = testStr.replace("Not Mentioned", '"'+'"')
+    testStr = testStr.replace("Not Mentioned", '"' + '"')
 
-    final_result = {"docs_info" : json.loads(testStr)}
+    print(testStr)
+
+    final_result = {"docs_info": json.loads(testStr)}
     return final_result
-    
-

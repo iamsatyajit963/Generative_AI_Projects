@@ -10,11 +10,13 @@ class ModelName(str, Enum):
     Phi = "phi3"
     Mistral = "mistral"
     Gemma_2B = "gemma2:2b"
+    deepseek = "deepseek-r1:8b"
 
 class QueryInput(BaseModel):
     question: str
     session_id: str = Field(default=None)
     model: ModelName = Field(default=ModelName.GPT4_O_MINI)
+    fileNames: list
 
 class SourceInfo(BaseModel):
     source: str
@@ -67,3 +69,6 @@ class ExtractInformation(BaseModel):
             }
         ]
     )
+
+    # def __init__(self, docs_info):
+    #     self.docs_info = docs_info
